@@ -1,0 +1,386 @@
+<title>Airport Audience Monetisation Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: wayfinding-sign header band, then a two-column "control desk" (inputs left, outputs right) that stacks on phones, then reference sections. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#14202b; --muted:#5a6a78; --line:#d6dde3;
+  --sign:#0f2a44; --sign-ink:#f6f8fa; --amber:#f2b705; --amber-ink:#14202b;
+  --s1:#0f4c81; --s2:#2f8f83; --s3:#f2b705; --s4:#c4572f; --s5:#7a5ea8; --s6:#6b7f8e;
+  --good:#2f8f5b; --warn:#b7791f;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d151d; --surface:#15212c; --ink:#e7edf2; --muted:#93a3b1; --line:#283846;
+  --sign:#0a1e31; --sign-ink:#f6f8fa; --amber:#f5c33b; --amber-ink:#14202b;
+  --s1:#5b9bd5; --s2:#4fb3a6; --s3:#f5c33b; --s4:#e07a52; --s5:#a68bd1; --s6:#8fa3b2;
+  --good:#5cc08a; --warn:#e0a84a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d151d; --surface:#15212c; --ink:#e7edf2; --muted:#93a3b1; --line:#283846;
+  --sign:#0a1e31; --sign-ink:#f6f8fa; --amber:#f5c33b; --amber-ink:#14202b;
+  --s1:#5b9bd5; --s2:#4fb3a6; --s3:#f5c33b; --s4:#e07a52; --s5:#a68bd1; --s6:#8fa3b2;
+  --good:#5cc08a; --warn:#e0a84a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+
+/* header sign */
+.sign{background:var(--sign);color:var(--sign-ink)}
+.sign .wrap{padding-block:28px 24px;display:flex;flex-wrap:wrap;gap:20px 32px;align-items:flex-end;justify-content:space-between}
+.sign h1{font-size:clamp(30px,5vw,46px);line-height:1.02}
+.sign p{margin:8px 0 0;max-width:60ch;color:#c4d0db}
+.gate{display:inline-flex;align-items:center;gap:10px;background:var(--amber);color:var(--amber-ink);font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;margin-bottom:14px}
+.gate b{background:var(--amber-ink);color:var(--amber);padding:1px 7px;border-radius:2px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#28445f;border:1px solid #28445f;border-radius:4px;overflow:hidden;min-width:0}
+.kpi{background:var(--sign);padding:10px 16px;min-width:130px}
+.kpi .label{color:#9fb2c4}
+.kpi .v{font-family:var(--f-mono);font-size:22px;color:var(--amber);font-variant-numeric:tabular-nums}
+
+main .wrap{padding-block:28px 48px;display:flex;flex-direction:column;gap:36px}
+.desk{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.desk{grid-template-columns:minmax(0,1fr)}}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.panel>header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.panel>header h2{font-size:21px}
+.panel .body{padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+legend{font-family:var(--f-display);font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;padding:0}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:10px;align-items:center}
+.row label{font-size:14px}
+.row label small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+input[type=number],select{width:100%;font:inherit;font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;text-align:right}
+select{text-align:left;font-family:var(--f-body)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--s1);outline-offset:1px}
+.seg{display:grid;grid-template-columns:12px minmax(0,1fr) 64px 72px;gap:8px;align-items:center;font-size:14px}
+.seg .dot{width:10px;height:10px;border-radius:2px}
+.seghead{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.note{font-size:12px;color:var(--muted)}
+.note.warn{color:var(--warn)}
+
+/* outputs */
+.split{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.split{grid-template-columns:minmax(0,1fr)}}
+.stat{border:1px solid var(--line);border-radius:4px;padding:12px 14px}
+.stat .v{font-family:var(--f-mono);font-size:22px;font-variant-numeric:tabular-nums}
+.stat.hl{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+.stat.hl .label{color:var(--amber-ink);opacity:.8}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:20px;border:1px solid currentColor}
+.pill.good{color:var(--good)} .pill.warn{color:var(--warn)}
+
+.bar{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--line)}
+.bar span{display:block;height:100%}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500}
+td.r,th.r{text-align:right}
+.tscroll{overflow-x:auto}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;vertical-align:baseline}
+
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.chart .grid{stroke:var(--line);stroke-width:1}
+
+/* reference sections */
+.section h2{font-size:28px;margin-bottom:6px}
+.section>p{margin:0 0 16px;max-width:70ch;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{font-size:20px}
+.card .code{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.08em;background:var(--sign);color:var(--amber);padding:2px 8px;border-radius:2px;align-self:flex-start}
+.card ul{margin:0;padding-left:18px;font-size:14px}
+.card p{margin:0;font-size:14px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.step{border-top:3px solid var(--amber);padding-top:10px}
+.step h3{font-size:19px;margin-bottom:4px}
+.step p{margin:0;font-size:14px;color:var(--muted)}
+.step .label{color:var(--ink)}
+footer.disc{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){.bar span{transition:width .25s ease}}
+</style>
+
+<div class="sign">
+  <div class="wrap">
+    <div>
+      <div class="gate">Airside <b>A</b> Audience Revenue</div>
+      <h1>Airport Audience Monetisation Model</h1>
+      <p>Turn passenger flow into a priced, packaged audience. Change the inputs on the left; revenue by stream, by month and by concession party updates live. All figures are illustrative defaults for a 5M-passenger regional airport.</p>
+    </div>
+    <div class="kpis" aria-live="polite">
+      <div class="kpi"><div class="label">Gross media revenue</div><div class="v" id="k-gross">–</div></div>
+      <div class="kpi"><div class="label">Revenue per pax</div><div class="v" id="k-rpp">–</div></div>
+      <div class="kpi"><div class="label">Blended eCPM</div><div class="v" id="k-cpm">–</div></div>
+    </div>
+  </div>
+</div>
+
+<main>
+<div class="wrap">
+
+<div class="desk">
+  <!-- INPUTS -->
+  <form class="panel" id="inputs" onsubmit="return false">
+    <header><h2>Inputs</h2><button type="button" id="reset" style="font:inherit;font-size:13px;background:none;border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:4px 10px;cursor:pointer">Reset defaults</button></header>
+    <div class="body">
+      <fieldset>
+        <legend>Traffic</legend>
+        <div class="row"><label for="pax">Annual passengers</label><input type="number" id="pax" step="100000" min="0"></div>
+        <div class="row"><label for="dep">Departing share %<small>Departing pax see far more media</small></label><input type="number" id="dep" min="0" max="100"></div>
+        <div class="row"><label for="dwell">Avg airside dwell (min)</label><input type="number" id="dwell" min="0"></div>
+        <div class="row"><label for="opm">Ad exposures per minute<small>Screen density along the journey</small></label><input type="number" id="opm" step="0.01" min="0"></div>
+        <div class="row"><label for="arr">Exposures per arriving pax</label><input type="number" id="arr" step="0.5" min="0"></div>
+        <div class="row"><label for="season">Seasonality profile</label>
+          <select id="season"><option value="summer">Summer-peak leisure</option><option value="hub">Year-round hub</option></select></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Audience segments</legend>
+        <div class="seg seghead"><span></span><span>Segment</span><span>Mix %</span><span>CPM €</span></div>
+        <div id="segs"></div>
+        <div class="note" id="mixnote"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Inventory & streams</legend>
+        <div class="row"><label for="fill">DOOH sell-through %</label><input type="number" id="fill" min="0" max="100"></div>
+        <div class="row"><label for="faces">Static / backlit faces</label><input type="number" id="faces" min="0"></div>
+        <div class="row"><label for="rate">Avg static rate €/face/month</label><input type="number" id="rate" step="50" min="0"></div>
+        <div class="row"><label for="occ">Static occupancy %</label><input type="number" id="occ" min="0" max="100"></div>
+        <div class="row"><label for="spons">Sponsorship & naming €/yr<small>Lounge, gate, walkway, Wi-Fi portal</small></label><input type="number" id="spons" step="10000" min="0"></div>
+        <div class="row"><label for="acts">Experiential activations / yr</label><input type="number" id="acts" min="0"></div>
+        <div class="row"><label for="actfee">Avg fee per activation €</label><input type="number" id="actfee" step="500" min="0"></div>
+        <div class="row"><label for="wifi">Wi-Fi / app opt-in % of pax</label><input type="number" id="wifi" min="0" max="100"></div>
+        <div class="row"><label for="wifiv">Data & retargeting € per opt-in</label><input type="number" id="wifiv" step="0.01" min="0"></div>
+        <div class="row"><label for="spend">Retail spend per departing pax €</label><input type="number" id="spend" step="0.5" min="0"></div>
+        <div class="row"><label for="rmn">Retail-media fee % of sales</label><input type="number" id="rmn" step="0.1" min="0"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Concession deal</legend>
+        <div class="row"><label for="share">Airport revenue share %</label><input type="number" id="share" min="0" max="100"></div>
+        <div class="row"><label for="mag">Minimum annual guarantee €</label><input type="number" id="mag" step="50000" min="0"></div>
+        <div class="row"><label for="opex">Operator opex % of gross<small>Sales, content ops, maintenance</small></label><input type="number" id="opex" min="0" max="100"></div>
+      </fieldset>
+    </div>
+  </form>
+
+  <!-- OUTPUTS -->
+  <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+    <section class="panel">
+      <header><h2>Who gets what</h2><span id="magpill"></span></header>
+      <div class="body">
+        <div class="split">
+          <div class="stat"><div class="label">Gross revenue</div><div class="v" id="o-gross"></div></div>
+          <div class="stat hl"><div class="label">Airport receives</div><div class="v" id="o-airport"></div></div>
+          <div class="stat"><div class="label">Operator margin</div><div class="v" id="o-op"></div></div>
+        </div>
+        <div class="note" id="o-dealnote"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Revenue by stream</h2><span class="label" id="o-imps"></span></header>
+      <div class="body">
+        <div class="bar" id="streambar" role="img" aria-label="Share of revenue by stream"></div>
+        <div class="tscroll"><table>
+          <thead><tr><th>Stream</th><th>Pricing basis</th><th class="r">€ / year</th><th class="r">Share</th></tr></thead>
+          <tbody id="streamrows"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Monthly revenue</h2><span class="label" id="o-peak"></span></header>
+      <div class="body"><svg class="chart" id="monthly" viewBox="0 0 640 220" role="img" aria-label="Monthly revenue chart"></svg></div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Audience value by segment</h2><span class="label">Audience-priced streams only</span></header>
+      <div class="body tscroll"><table>
+        <thead><tr><th>Segment</th><th class="r">Impressions</th><th class="r">CPM</th><th class="r">DOOH €</th><th class="r">€ / pax</th></tr></thead>
+        <tbody id="segrows"></tbody>
+      </table></div>
+    </section>
+  </div>
+</div>
+
+<section class="section">
+  <h2>Audience packs to sell</h2>
+  <p>Advertisers buy people, not screens. Package inventory around who is walking past, and price each pack from the segment CPMs above plus a scarcity premium.</p>
+  <div class="cards">
+    <article class="card"><span class="code">BIZ</span><h3>Business Traveller</h3><p>Weekday 05:00–09:00 and 16:00–20:00 departures, fast-track lanes, business lounge, gate screens on capital-city routes.</p><ul><li>Banks, B2B tech, premium auto, law & consulting</li><li>Sold as share-of-voice, 2- or 4-week cycles</li><li>Price: segment CPM × 1.2 daypart premium</li></ul></article>
+    <article class="card"><span class="code">LSR</span><h3>Summer Leisure Wave</h3><p>June–September peak, holiday charters, families and inbound tourists with high retail and F&B intent.</p><ul><li>Telcos (roaming), car rental, attractions, FMCG, duty-free brands</li><li>Sold in seasonal blocks with sampling add-ons</li><li>Price: seasonal index 1.3–1.6 on base CPM</li></ul></article>
+    <article class="card"><span class="code">PRM</span><h3>Premium & Lounge</h3><p>Lounge, priority boarding and long-haul gates. Smallest audience, highest income and attention.</p><ul><li>Luxury, watches, private banking, real estate</li><li>Exclusive category sponsorship, annual</li><li>Price: fixed fee with audience guarantee</li></ul></article>
+    <article class="card"><span class="code">ARR</span><h3>Welcome / Arrivals</h3><p>Baggage reclaim and arrivals hall. Short dwell, but the first brand message in the destination.</p><ul><li>Taxi & ride-hailing apps, hotels, local banks, tourist boards</li><li>Domination packages and reclaim belt wraps</li><li>Price: flat monthly with impression floor</li></ul></article>
+    <article class="card"><span class="code">LOC</span><h3>Local Catchment</h3><p>Meeters, greeters and airport staff. Repeat exposure to the same residents every week.</p><ul><li>Local retail, auto dealers, employers, utilities</li><li>Low CPM, high frequency, sold programmatically</li><li>Price: open-market DOOH floor</li></ul></article>
+    <article class="card"><span class="code">DATA</span><h3>Audience Extension</h3><p>Wi-Fi and app opt-ins let a campaign follow travellers to mobile and online after they leave the terminal.</p><ul><li>Any pack above, plus measured footfall or sales lift</li><li>GDPR consent captured at portal login</li><li>Price: per opt-in or as a % uplift on the media buy</li></ul></article>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Pricing logic</h2>
+  <p>One formula prices every audience-driven slot. Fixed formats (static, sponsorship) use rate cards but should be sanity-checked against the same audience value.</p>
+  <div class="tscroll"><table class="panel" style="border-collapse:separate;border-spacing:0">
+    <thead><tr><th>Factor</th><th>What it captures</th><th class="r">Typical range</th></tr></thead>
+    <tbody>
+      <tr><td><b>Base CPM</b></td><td>Value of the segment (income, decision power, travel purpose)</td><td class="r num">€10 – €90</td></tr>
+      <tr><td><b>Zone factor</b></td><td>Dwell and attention: gate lounge &gt; security queue &gt; walkway &gt; reclaim</td><td class="r num">0.7 – 1.4×</td></tr>
+      <tr><td><b>Daypart factor</b></td><td>Business waves, first-wave departures, late charters</td><td class="r num">0.8 – 1.3×</td></tr>
+      <tr><td><b>Seasonal index</b></td><td>Monthly traffic relative to the annual average</td><td class="r num">0.4 – 2.1×</td></tr>
+      <tr><td><b>Exclusivity premium</b></td><td>Category lock-out, single-advertiser domination</td><td class="r num">+15 – 40%</td></tr>
+      <tr><td><b>Data uplift</b></td><td>Audience extension or measured attribution attached</td><td class="r num">+10 – 25%</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:12px;color:var(--ink)" class="num">Slot price = impressions × base CPM / 1000 × zone × daypart × season × (1 + premiums)</p>
+</section>
+
+<section class="section">
+  <h2>Rollout</h2>
+  <p>The order matters: measurement first, because every later price increase depends on being able to prove the audience.</p>
+  <div class="steps">
+    <div class="step"><div class="label">Months 0–3</div><h3>Measure the audience</h3><p>Link flight schedules, gate assignments and security throughput to screen logs. Publish an audited impressions-per-zone number.</p></div>
+    <div class="step"><div class="label">Months 3–6</div><h3>Repackage the rate card</h3><p>Move from per-face pricing to the six audience packs. Add seasonal and daypart indices.</p></div>
+    <div class="step"><div class="label">Months 6–12</div><h3>Open programmatic</h3><p>Connect DOOH to an SSP with floor prices per segment, to sell unsold time without undercutting direct deals.</p></div>
+    <div class="step"><div class="label">Year 2</div><h3>Add data & retail media</h3><p>Launch Wi-Fi opt-in audience extension and closed-loop retail-media deals with duty-free and F&B tenants.</p></div>
+  </div>
+</section>
+
+<footer class="disc">Defaults are illustrative planning assumptions, not market data or quotes. Replace them with the airport's real passenger statistics, inventory list and rate card before using the outputs in a proposal.</footer>
+</div>
+</main>
+
+<script>
+(function(){
+const DEFAULTS={pax:5000000,dep:50,dwell:75,opm:0.18,arr:4,season:"summer",
+  fill:50,faces:80,rate:1500,occ:65,spons:450000,acts:24,actfee:9000,wifi:35,wifiv:0.15,spend:22,rmn:0.8,
+  share:50,mag:1200000,opex:30,
+  segs:[{id:"biz",name:"Business",mix:22,cpm:45,c:"--s1"},{id:"lsr",name:"Leisure",mix:58,cpm:18,c:"--s2"},
+        {id:"trn",name:"Transfer",mix:8,cpm:25,c:"--s3"},{id:"prm",name:"Premium / lounge",mix:4,cpm:90,c:"--s4"},
+        {id:"loc",name:"Locals & staff",mix:8,cpm:10,c:"--s5"}]};
+const SEASON={summer:[0.35,0.35,0.5,0.8,1.1,1.5,2.0,2.1,1.5,0.9,0.45,0.45],
+              hub:[0.85,0.8,0.95,1.0,1.05,1.1,1.2,1.2,1.05,1.0,0.9,0.9]};
+const MONTHS=["J","F","M","A","M","J","J","A","S","O","N","D"];
+const $=id=>document.getElementById(id);
+const fields=["pax","dep","dwell","opm","arr","season","fill","faces","rate","occ","spons","acts","actfee","wifi","wifiv","spend","rmn","share","mag","opex"];
+
+const segBox=$("segs");
+DEFAULTS.segs.forEach(s=>{
+  const d=document.createElement("div");d.className="seg";
+  d.innerHTML=`<span class="dot" style="background:var(${s.c})"></span><label for="mix-${s.id}">${s.name}</label>`+
+    `<input type="number" id="mix-${s.id}" min="0" max="100" aria-label="${s.name} mix percent">`+
+    `<input type="number" id="cpm-${s.id}" min="0" aria-label="${s.name} CPM in euro">`;
+  segBox.appendChild(d);
+});
+
+function load(){
+  fields.forEach(f=>$(f).value=DEFAULTS[f]);
+  DEFAULTS.segs.forEach(s=>{$("mix-"+s.id).value=s.mix;$("cpm-"+s.id).value=s.cpm;});
+}
+const n=id=>{const v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0};
+const eur=v=>{const a=Math.abs(v);
+  if(a>=1e6) return "€"+(v/1e6).toFixed(2)+"M";
+  if(a>=1e3) return "€"+Math.round(v/1e3).toLocaleString("en-GB")+"k";
+  return "€"+v.toFixed(2);};
+const full=v=>"€"+Math.round(v).toLocaleString("en-GB");
+const big=v=>v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"k";
+
+function calc(){
+  const pax=n("pax"),dep=n("dep")/100,depPax=pax*dep,arrPax=pax-depPax;
+  const oppDep=n("dwell")*n("opm"),imps=depPax*oppDep+arrPax*n("arr");
+  const segs=DEFAULTS.segs.map(s=>({...s,mix:n("mix-"+s.id),cpm:n("cpm-"+s.id)}));
+  const mixSum=segs.reduce((a,s)=>a+s.mix,0)||1;
+  const fill=n("fill")/100;
+  let dooh=0;
+  segs.forEach(s=>{s.w=s.mix/mixSum;s.imps=imps*s.w;s.rev=s.imps*fill*s.cpm/1000;s.pax=pax*s.w;dooh+=s.rev;});
+  const blended=segs.reduce((a,s)=>a+s.w*s.cpm,0);
+
+  const streams=[
+    {k:"DOOH (direct + programmatic)",basis:`${big(imps)} impressions × ${n("fill")}% sold × €${blended.toFixed(2)} blended CPM`,v:dooh,c:"--s1",aud:true},
+    {k:"Static & backlit",basis:`${n("faces")} faces × €${n("rate").toLocaleString("en-GB")}/mo × ${n("occ")}% occupancy`,v:n("faces")*n("rate")*n("occ")/100*12,c:"--s6",aud:false},
+    {k:"Sponsorship & naming",basis:"Fixed annual contracts",v:n("spons"),c:"--s4",aud:false},
+    {k:"Experiential & sampling",basis:`${n("acts")} activations × ${full(n("actfee"))}`,v:n("acts")*n("actfee"),c:"--s3",aud:true},
+    {k:"Wi-Fi / app data",basis:`${big(pax*n("wifi")/100)} opt-ins × €${n("wifiv").toFixed(2)}`,v:pax*n("wifi")/100*n("wifiv"),c:"--s5",aud:true},
+    {k:"Retail media",basis:`${big(depPax)} departing × €${n("spend")} spend × ${n("rmn")}%`,v:depPax*n("spend")*n("rmn")/100,c:"--s2",aud:true}
+  ];
+  const gross=streams.reduce((a,s)=>a+s.v,0);
+  const shareAmt=gross*n("share")/100,mag=n("mag"),airport=Math.max(shareAmt,mag);
+  const opex=gross*n("opex")/100,op=gross-airport-opex;
+
+  // KPIs
+  $("k-gross").textContent=eur(gross);
+  $("k-rpp").textContent=pax?"€"+(gross/pax).toFixed(2):"–";
+  $("k-cpm").textContent=imps?"€"+(gross/imps*1000).toFixed(2):"–";
+  $("o-imps").textContent=`${big(imps)} ad impressions / yr · ${oppDep.toFixed(1)} per departing pax`;
+
+  // deal
+  $("o-gross").textContent=eur(gross);$("o-airport").textContent=eur(airport);
+  $("o-op").textContent=eur(op);$("o-op").style.color=op<0?"var(--s4)":"";
+  const magBinds=mag>shareAmt;
+  $("magpill").innerHTML=magBinds?'<span class="pill warn">MAG binding</span>':'<span class="pill good">Share above MAG</span>';
+  $("o-dealnote").textContent=magBinds
+    ? `The ${n("share")}% share is worth ${eur(shareAmt)}, below the ${eur(mag)} guarantee, so the operator pays the guarantee and carries the shortfall of ${eur(mag-shareAmt)}.`
+    : `The ${n("share")}% share (${eur(shareAmt)}) clears the ${eur(mag)} guarantee by ${eur(shareAmt-mag)}. Operator keeps ${eur(op)} after ${n("opex")}% opex (${(gross?op/gross*100:0).toFixed(1)}% margin).`;
+
+  // stream bar + rows
+  const bar=$("streambar");bar.innerHTML="";
+  const rows=$("streamrows");rows.innerHTML="";
+  streams.forEach(s=>{
+    const pct=gross?s.v/gross*100:0;
+    const sp=document.createElement("span");sp.style.width=pct+"%";sp.style.background=`var(${s.c})`;sp.title=`${s.k}: ${pct.toFixed(1)}%`;bar.appendChild(sp);
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><span class="swatch" style="background:var(${s.c})"></span>${s.k}</td><td class="note">${s.basis}</td><td class="r num">${full(s.v)}</td><td class="r num">${pct.toFixed(1)}%</td>`;
+    rows.appendChild(tr);
+  });
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td><b>Total</b></td><td></td><td class="r num"><b>${full(gross)}</b></td><td class="r num">100%</td>`;rows.appendChild(tr);
+
+  // segments
+  const sr=$("segrows");sr.innerHTML="";
+  segs.forEach(s=>{const r=document.createElement("tr");
+    r.innerHTML=`<td><span class="swatch" style="background:var(${s.c})"></span>${s.name} <span class="note">${(s.w*100).toFixed(0)}%</span></td><td class="r num">${big(s.imps)}</td><td class="r num">€${s.cpm}</td><td class="r num">${full(s.rev)}</td><td class="r num">€${s.pax?(s.rev/s.pax).toFixed(2):"0.00"}</td>`;
+    sr.appendChild(r);});
+  $("mixnote").textContent=Math.abs(mixSum-100)>0.01?`Mix adds to ${mixSum}%. The model rescales it to 100%.`:"Mix adds to 100%.";
+  $("mixnote").className="note"+(Math.abs(mixSum-100)>0.01?" warn":"");
+
+  // monthly: audience streams follow traffic, fixed streams spread evenly
+  const prof=SEASON[$("season").value];
+  const audAnnual=streams.filter(s=>s.aud).reduce((a,s)=>a+s.v,0),fixAnnual=gross-audAnnual;
+  const months=prof.map(p=>({aud:audAnnual*p/12,fix:fixAnnual/12}));
+  drawMonthly(months);
+  const pk=months.reduce((b,m,i)=>m.aud+m.fix>b.v?{v:m.aud+m.fix,i}:b,{v:0,i:0});
+  const full12=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  $("o-peak").textContent=`Peak: ${full12[pk.i]} ${eur(pk.v)}`;
+}
+
+function drawMonthly(months){
+  const svg=$("monthly"),W=640,H=220,L=52,R=10,T=14,B=26;
+  const max=Math.max(...months.map(m=>m.aud+m.fix))||1;
+  const step=niceStep(max/4),top=Math.ceil(max/step)*step;
+  const y=v=>T+(H-T-B)*(1-v/top),bw=(W-L-R)/12;
+  let s="";
+  for(let v=0;v<=top+1e-9;v+=step){s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${eur(v)}</text>`;}
+  months.forEach((m,i)=>{
+    const x=L+i*bw+bw*0.18,w=bw*0.64;
+    s+=`<rect x="${x}" y="${y(m.fix)}" width="${w}" height="${y(0)-y(m.fix)}" fill="var(--s6)"/>`;
+    s+=`<rect x="${x}" y="${y(m.fix+m.aud)}" width="${w}" height="${y(m.fix)-y(m.fix+m.aud)}" fill="var(--s1)"/>`;
+    s+=`<text x="${x+w/2}" y="${H-8}" text-anchor="middle">${MONTHS[i]}</text>`;
+  });
+  s+=`<rect x="${W-R-190}" y="2" width="9" height="9" fill="var(--s1)"/><text x="${W-R-177}" y="10">Audience-priced</text>`;
+  s+=`<rect x="${W-R-80}" y="2" width="9" height="9" fill="var(--s6)"/><text x="${W-R-67}" y="10">Fixed</text>`;
+  svg.innerHTML=s;
+}
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x||1))),f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+
+load();calc();
+$("inputs").addEventListener("input",calc);
+$("reset").addEventListener("click",()=>{load();calc();});
+})();
+</script>
