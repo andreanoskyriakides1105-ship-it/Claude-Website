@@ -1,5 +1,5 @@
 ---
-name: multi-agent-problem-solving
+name: arena
 description: Coordinate multiple agents to solve complex problems through focused parallel work, independent analysis, and careful synthesis. Use when a task has separable parts, benefits from independent perspectives, or needs verification.
 ---
 
