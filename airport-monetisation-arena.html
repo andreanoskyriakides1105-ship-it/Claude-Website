@@ -1,0 +1,336 @@
+<title>Airport Monetisation Arena</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: wayfinding sign header; shared airport inputs strip; scoreboard (table + charts); five model "gates" in a grid; judge's verdict. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#14202b; --muted:#5a6a78; --line:#d6dde3;
+  --sign:#0f2a44; --sign-ink:#f6f8fa; --amber:#f2b705; --amber-ink:#14202b;
+  --m1:#0f4c81; --m2:#6b7f8e; --m3:#2f8f83; --m4:#c4572f; --m5:#7a5ea8;
+  --airport:#f2b705; --opex:#c9d2da; --good:#2f8f5b; --warn:#b7791f; --bad:#b8452a;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d151d; --surface:#15212c; --ink:#e7edf2; --muted:#93a3b1; --line:#283846;
+  --sign:#0a1e31; --amber:#f5c33b;
+  --m1:#5b9bd5; --m2:#8fa3b2; --m3:#4fb3a6; --m4:#e07a52; --m5:#a68bd1;
+  --airport:#f5c33b; --opex:#3a4b5a; --good:#5cc08a; --warn:#e0a84a; --bad:#e07a52; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d151d; --surface:#15212c; --ink:#e7edf2; --muted:#93a3b1; --line:#283846;
+  --sign:#0a1e31; --amber:#f5c33b;
+  --m1:#5b9bd5; --m2:#8fa3b2; --m3:#4fb3a6; --m4:#e07a52; --m5:#a68bd1;
+  --airport:#f5c33b; --opex:#3a4b5a; --good:#5cc08a; --warn:#e0a84a; --bad:#e07a52; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.note{font-size:12px;color:var(--muted)}
+
+.sign{background:var(--sign);color:var(--sign-ink)}
+.sign .wrap{padding-block:28px 24px}
+.sign h1{font-size:clamp(30px,5vw,46px);line-height:1.02}
+.sign p{margin:8px 0 0;max-width:68ch;color:#c4d0db}
+.gate{display:inline-flex;align-items:center;gap:10px;background:var(--amber);color:var(--amber-ink);font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:3px;margin-bottom:14px}
+.gate b{background:var(--amber-ink);color:var(--amber);padding:1px 7px;border-radius:2px}
+
+main .wrap{padding-block:28px 48px;display:flex;flex-direction:column;gap:32px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
+.panel>header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px 12px}
+.panel>header h2{font-size:22px}
+.panel .body{padding:16px 18px}
+
+.shared{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 18px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label{font-size:13px}
+input[type=number],select{width:100%;font:inherit;font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;text-align:right}
+select{text-align:left;font-family:var(--f-body)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--m1);outline-offset:1px}
+button.ghost{font:inherit;font-size:13px;background:none;border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:4px 10px;cursor:pointer}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:500}
+td.r,th.r{text-align:right}
+.tscroll{overflow-x:auto}
+.mname{display:flex;align-items:center;gap:10px;font-weight:600}
+.badge{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.06em;color:#fff;padding:1px 8px;border-radius:2px}
+td.best{background:color-mix(in srgb,var(--good) 14%,transparent);font-weight:600}
+td.best::after{content:" ▲";color:var(--good);font-size:10px}
+.charts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:20px}
+@media (max-width:900px){.charts{grid-template-columns:minmax(0,1fr)}}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .lbl{fill:var(--ink);font-family:var(--f-body);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+
+.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+@media (max-width:400px){.models{grid-template-columns:minmax(0,1fr)}}
+.model{display:flex;flex-direction:column}
+.model>header{border-top:4px solid var(--c);border-radius:6px 6px 0 0;flex-direction:column;align-items:stretch}
+.model .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.model .gross{font-family:var(--f-mono);font-size:22px;font-variant-numeric:tabular-nums}
+.model .thesis{margin:4px 0 0;font-size:14px;color:var(--muted)}
+.model .body{display:flex;flex-direction:column;gap:14px;flex:1}
+.lines td{white-space:normal;padding:6px 4px;font-size:13px}
+.lines td.r{white-space:nowrap}
+.lines .basis{display:block;font-size:11px;color:var(--muted)}
+.tag{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:0 6px;margin-left:4px}
+details{border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;font-size:13px;font-weight:500}
+.params{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;margin-top:10px}
+.params .f label{font-size:12px;color:var(--muted)}
+.scores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;font-size:13px}
+.meter{display:flex;gap:3px;margin-top:3px}
+.meter span{flex:1;height:5px;border-radius:2px;background:var(--line)}
+.meter span.on{background:var(--c)}
+.judge{font-size:13px;display:grid;gap:4px;margin:0}
+.judge b{font-weight:600}
+.splitbar{display:flex;height:10px;border-radius:2px;overflow:hidden;background:var(--line)}
+.splitbar span{display:block;height:100%}
+
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.verdict .step{border-top:3px solid var(--amber);padding-top:10px}
+.verdict h3{font-size:20px;margin-bottom:4px}
+.verdict p{margin:0;font-size:14px;color:var(--muted)}
+footer.disc{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+</style>
+
+<div class="sign"><div class="wrap">
+  <div class="gate">Monetisation <b>Arena</b> 5 models</div>
+  <h1>Five ways to monetise an airport audience</h1>
+  <p>Five competing business models run against the same airport. Change the shared airport inputs and every model recalculates. Open a model's assumptions to adjust it. The scoreboard marks the leader on each measure.</p>
+</div></div>
+
+<main><div class="wrap">
+
+<section class="panel">
+  <header><h2>Shared airport inputs</h2><button type="button" class="ghost" id="reset">Reset all defaults</button></header>
+  <div class="body"><form class="shared" id="shared" onsubmit="return false"></form></div>
+</section>
+
+<section class="panel">
+  <header><h2>Scoreboard</h2><span class="label" id="sb-note"></span></header>
+  <div class="body">
+    <div class="tscroll"><table>
+      <thead><tr><th>Model</th><th class="r">Gross / yr</th><th class="r">Year 1</th><th class="r">€ / pax</th><th class="r">Airport gets</th><th class="r">Operator net</th><th class="r">Margin</th><th class="r">Fixed revenue</th><th class="r">Peak ÷ low month</th></tr></thead>
+      <tbody id="sb"></tbody>
+    </table></div>
+    <div class="charts">
+      <div>
+        <div class="label">Where each euro goes (run-rate)</div>
+        <svg class="chart" id="split" viewBox="0 0 560 230" role="img" aria-label="Gross revenue per model split into airport share, operator opex and operator net"></svg>
+        <div class="legend"><span><i style="background:var(--airport)"></i>Airport</span><span><i style="background:var(--opex)"></i>Operator costs</span><span><i style="background:var(--muted)"></i>Operator net</span></div>
+      </div>
+      <div>
+        <div class="label">Monthly gross revenue</div>
+        <svg class="chart" id="monthly" viewBox="0 0 560 230" role="img" aria-label="Monthly revenue per model"></svg>
+        <div class="legend" id="mlegend"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="models" id="models"></div>
+</section>
+
+<section>
+  <h2 style="font-size:28px;margin-bottom:6px">Judge's verdict</h2>
+  <p class="note" style="font-size:14px;max-width:70ch;margin:0 0 16px">No single model wins on every measure. The strongest plan combines them in sequence, using each one where it is strongest.</p>
+  <div class="verdict">
+    <div class="step"><div class="label">Year 1 base</div><h3>Partnerships + rate card</h3><p>Lock in category partners and naming rights (model D) to cover the minimum guarantee with fixed income before the season starts. Sell the remaining static and digital faces on a clean rate card (model B).</p></div>
+    <div class="step"><div class="label">Year 1 upside</div><h3>Audience pricing on digital</h3><p>Reprice digital screens by segment and flight wave (model A). Send unsold time programmatically with segment floor prices (model E), so peak summer traffic is priced at peak rates.</p></div>
+    <div class="step"><div class="label">Year 2 growth</div><h3>Data and retail media</h3><p>Build Wi-Fi consent and closed-loop sales data with duty-free and F&B tenants (model C). It has the highest ceiling but the slowest ramp and the most delivery risk, so it should grow on top of a base that already covers the guarantee.</p></div>
+  </div>
+</section>
+
+<footer class="disc">All defaults are illustrative planning assumptions for a 5M-passenger, summer-peak regional airport. They are not market data or quotes. Replace them with real passenger statistics, inventory and rate cards before using outputs in a proposal.</footer>
+</div></main>
+
+<script>
+(function(){
+const SEASON={summer:[0.35,0.35,0.5,0.8,1.1,1.5,2.0,2.1,1.5,0.9,0.45,0.45],
+              hub:[0.85,0.8,0.95,1.0,1.05,1.1,1.2,1.2,1.05,1.0,0.9,0.9]};
+const MON=["J","F","M","A","M","J","J","A","S","O","N","D"];
+const SHARED=[
+  {k:"pax",l:"Annual passengers",v:5000000,s:100000},
+  {k:"dep",l:"Departing share %",v:50,s:1},
+  {k:"dwell",l:"Airside dwell (min)",v:75,s:5},
+  {k:"opm",l:"Ad exposures per minute",v:0.18,s:0.01},
+  {k:"arr",l:"Exposures per arriving pax",v:4,s:0.5},
+  {k:"screens",l:"Digital screens",v:60,s:1},
+  {k:"faces",l:"Static / backlit faces",v:80,s:1},
+  {k:"wifi",l:"Wi-Fi / app opt-in %",v:35,s:1},
+  {k:"spend",l:"Retail spend / departing pax €",v:22,s:0.5},
+  {k:"season",l:"Seasonality",v:"summer",opts:[["summer","Summer-peak leisure"],["hub","Year-round hub"]]},
+  {k:"share",l:"Airport revenue share %",v:50,s:1},
+  {k:"mag",l:"Minimum annual guarantee €",v:1200000,s:50000}
+];
+const eur=v=>{const a=Math.abs(v);if(a>=1e6)return "€"+(v/1e6).toFixed(2)+"M";if(a>=1e3)return "€"+Math.round(v/1e3).toLocaleString("en-GB")+"k";return "€"+v.toFixed(2);};
+const big=v=>v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"k";
+const fmt=v=>Number(v).toLocaleString("en-GB");
+
+/* Each model: params (editable), lines(p,S) → revenue lines; fixed:true lines don't follow traffic seasonality. */
+const MODELS=[
+ {id:"A",name:"Audience-first",c:"--m1",
+  thesis:"Price passengers, not screens. Each segment has its own CPM, and digital time is sold on impressions.",
+  params:[{k:"sell",l:"Digital sell-through %",v:50},{k:"cpm",l:"Blended segment CPM €",v:26.7,s:0.1},{k:"rate",l:"Static € / face / month",v:1500,s:50},{k:"occ",l:"Static occupancy %",v:65},{k:"spons",l:"Sponsorship € / yr",v:450000,s:10000},{k:"acts",l:"Activations / yr",v:24},{k:"rmn",l:"Retail-media fee %",v:0.8,s:0.1},{k:"data",l:"€ per Wi-Fi opt-in",v:0.15,s:0.01},{k:"opex",l:"Operator costs %",v:30},{k:"ramp",l:"Year-1 ramp %",v:80}],
+  lines:(p,S)=>[
+    {k:"Digital on impressions",b:`${big(S.imps)} imps × ${p.sell}% × €${p.cpm} CPM`,v:S.imps*p.sell/100*p.cpm/1000},
+    {k:"Static & backlit",b:`${S.faces} faces × €${fmt(p.rate)} × ${p.occ}%`,v:S.faces*p.rate*p.occ/100*12},
+    {k:"Sponsorship",b:"Annual contracts",v:p.spons,fixed:true},
+    {k:"Experiential",b:`${p.acts} × €9,000`,v:p.acts*9000},
+    {k:"Retail media",b:`${big(S.depPax)} dep × €${S.spend} × ${p.rmn}%`,v:S.depPax*S.spend*p.rmn/100},
+    {k:"Wi-Fi data",b:`${big(S.optins)} opt-ins × €${p.data}`,v:S.optins*p.data}],
+  scores:{"Setup cost":3,"Time to revenue":3,"Revenue risk":3,"Measurement need":4},
+  judge:["Brands that buy on reach and CPM, and agencies used to digital buying.","It needs an audited impressions number. Without one, buyers treat the CPM as a guess."]},
+ {id:"B",name:"Inventory rate card",c:"--m2",
+  thesis:"The traditional concession model. Every face and screen slot has a list price by zone, sold by the week or month.",
+  params:[{k:"slots",l:"Slots per screen loop",v:6},{k:"slotw",l:"€ per slot per week",v:90,s:5},{k:"docc",l:"Digital occupancy %",v:55},{k:"rate",l:"Static € / face / month",v:1700,s:50},{k:"occ",l:"Static occupancy %",v:70},{k:"amb",l:"Ambient specials € / yr",v:250000,s:10000},{k:"spons",l:"Sponsorship € / yr",v:200000,s:10000},{k:"opex",l:"Operator costs %",v:25},{k:"ramp",l:"Year-1 ramp %",v:95}],
+  lines:(p,S)=>[
+    {k:"Digital slots",b:`${S.screens} screens × ${p.slots} slots × €${p.slotw}/wk × ${p.docc}%`,v:S.screens*p.slots*p.slotw*52*p.docc/100},
+    {k:"Static & backlit",b:`${S.faces} faces × €${fmt(p.rate)} × ${p.occ}%`,v:S.faces*p.rate*p.occ/100*12},
+    {k:"Ambient specials",b:"Floor vinyls, belts, jet bridges",v:p.amb},
+    {k:"Sponsorship",b:"Annual contracts",v:p.spons,fixed:true}],
+  scores:{"Setup cost":1,"Time to revenue":1,"Revenue risk":2,"Measurement need":1},
+  judge:["Fast to launch, easy for any sales team to sell, and predictable for the airport.","It leaves money on the table in peak months, because the price stays the same when traffic doubles."]},
+ {id:"C",name:"Data & retail-led",c:"--m3",
+  thesis:"Treat the airport as a retail media network. Sell consented traveller data and closed-loop sales results, with screens as delivery.",
+  params:[{k:"rmn",l:"Retail-media fee %",v:2.5,s:0.1},{k:"data",l:"€ per Wi-Fi opt-in",v:0.6,s:0.05},{k:"bonus",l:"Performance bonus %",v:10},{k:"sell",l:"Digital sell-through %",v:30},{k:"cpm",l:"Delivery CPM €",v:20,s:0.5},{k:"rate",l:"Static € / face / month",v:1500,s:50},{k:"occ",l:"Static occupancy %",v:50},{k:"opex",l:"Operator costs %",v:40},{k:"ramp",l:"Year-1 ramp %",v:45}],
+  lines:(p,S)=>{const rm=S.depPax*S.spend*p.rmn/100,dt=S.optins*p.data;return [
+    {k:"Retail media network",b:`${big(S.depPax)} dep × €${S.spend} × ${p.rmn}%`,v:rm},
+    {k:"Audience extension data",b:`${big(S.optins)} opt-ins × €${p.data}`,v:dt},
+    {k:"Performance bonuses",b:`${p.bonus}% on measured sales lift`,v:(rm+dt)*p.bonus/100},
+    {k:"Digital as delivery",b:`${big(S.imps)} imps × ${p.sell}% × €${p.cpm}`,v:S.imps*p.sell/100*p.cpm/1000},
+    {k:"Static & backlit",b:`${S.faces} faces × €${fmt(p.rate)} × ${p.occ}%`,v:S.faces*p.rate*p.occ/100*12}];},
+  scores:{"Setup cost":5,"Time to revenue":5,"Revenue risk":4,"Measurement need":5},
+  judge:["Duty-free, F&B, FMCG and telco brands that want proof of sales, not just reach.","It depends on GDPR consent rates, tenant data-sharing deals and a tech stack. Expect a slow first year."]},
+ {id:"D",name:"Partnership-led",c:"--m4",
+  thesis:"Sell a few large annual category partnerships and naming rights. Partners get exclusivity and share of voice, and the rest is sold normally.",
+  params:[{k:"cats",l:"Category partners",v:6},{k:"fee",l:"€ per partner / yr",v:220000,s:10000},{k:"naming",l:"Naming rights € / yr",v:350000,s:10000},{k:"resid",l:"Residual media sold %",v:45},{k:"acts",l:"Activations / yr",v:12},{k:"opex",l:"Operator costs %",v:20},{k:"ramp",l:"Year-1 ramp %",v:70}],
+  lines:(p,S)=>{const open=S.imps*0.5*26.7/1000+S.faces*1500*0.65*12;return [
+    {k:"Category partnerships",b:`${p.cats} partners × €${fmt(p.fee)}`,v:p.cats*p.fee,fixed:true},
+    {k:"Naming rights",b:"Lounge, pier or walkway",v:p.naming,fixed:true},
+    {k:"Residual open media",b:`${p.resid}% of open-market value ${eur(open)}`,v:open*p.resid/100},
+    {k:"Partner activations",b:`${p.acts} × €9,000`,v:p.acts*9000}];},
+  scores:{"Setup cost":2,"Time to revenue":3,"Revenue risk":2,"Measurement need":2},
+  judge:["Banks, telcos, airlines, car brands and tourist boards that want to own the airport.","Each contract is a big single bet. Losing one partner is a large hole, and exclusivity blocks rival brands."]},
+ {id:"E",name:"Programmatic yield",c:"--m5",
+  thesis:"Put all digital time into an SSP with segment floor prices, and raise prices automatically when flight waves and seasons push up traffic.",
+  params:[{k:"sell",l:"Programmatic fill %",v:70},{k:"floor",l:"Blended floor CPM €",v:22,s:0.5},{k:"uplift",l:"Dynamic price uplift %",v:25},{k:"fees",l:"SSP / tech fees %",v:18},{k:"rate",l:"Static € / face / month",v:1500,s:50},{k:"occ",l:"Static occupancy %",v:60},{k:"data",l:"€ per Wi-Fi opt-in",v:0.15,s:0.01},{k:"spons",l:"Sponsorship € / yr",v:300000,s:10000},{k:"opex",l:"Operator costs %",v:22},{k:"ramp",l:"Year-1 ramp %",v:65}],
+  lines:(p,S)=>{const g=S.imps*p.sell/100*p.floor*(1+p.uplift/100)/1000;return [
+    {k:"Programmatic digital",b:`${big(S.imps)} imps × ${p.sell}% × €${p.floor} × ${(1+p.uplift/100).toFixed(2)}`,v:g},
+    {k:"Less SSP fees",b:`${p.fees}% of programmatic`,v:-g*p.fees/100},
+    {k:"Static & backlit",b:`${S.faces} faces × €${fmt(p.rate)} × ${p.occ}%`,v:S.faces*p.rate*p.occ/100*12},
+    {k:"Wi-Fi data",b:`${big(S.optins)} opt-ins × €${p.data}`,v:S.optins*p.data},
+    {k:"Sponsorship",b:"Annual contracts",v:p.spons,fixed:true}];},
+  scores:{"Setup cost":4,"Time to revenue":3,"Revenue risk":4,"Measurement need":4},
+  judge:["Global brands buying DOOH through their trading desks, and filling quiet hours.","Revenue moves with demand in the open market, and tech fees take a large share. Without floor prices, direct deals get undercut."]}
+];
+
+/* build shared inputs */
+const sf=document.getElementById("shared");
+SHARED.forEach(f=>{const d=document.createElement("div");d.className="f";
+  d.innerHTML=`<label for="s-${f.k}">${f.l}</label>`+(f.opts?`<select id="s-${f.k}">${f.opts.map(o=>`<option value="${o[0]}">${o[1]}</option>`).join("")}</select>`:`<input type="number" id="s-${f.k}" min="0" step="${f.s}">`);
+  sf.appendChild(d);});
+
+/* build model cards */
+const mbox=document.getElementById("models");
+MODELS.forEach(m=>{
+  const el=document.createElement("article");el.className="panel model";el.style.setProperty("--c",`var(${m.c})`);
+  el.innerHTML=`<header><div class="top"><div class="mname"><span class="badge" style="background:var(${m.c})">${m.id}</span><h2>${m.name}</h2></div><div class="gross" id="g-${m.id}"></div></div><p class="thesis">${m.thesis}</p></header>
+  <div class="body">
+    <table class="lines"><tbody id="l-${m.id}"></tbody></table>
+    <div><div class="splitbar" id="sp-${m.id}"></div><div class="note" id="sn-${m.id}" style="margin-top:4px"></div></div>
+    <div class="scores">${Object.entries(m.scores).map(([k,v])=>`<div>${k}<div class="meter" aria-label="${k} ${v} of 5">${[1,2,3,4,5].map(i=>`<span class="${i<=v?"on":""}"></span>`).join("")}</div></div>`).join("")}</div>
+    <div class="judge"><div><b>Best for:</b> ${m.judge[0]}</div><div><b>Watch out:</b> ${m.judge[1]}</div></div>
+    <details><summary>Model assumptions</summary><form class="params" onsubmit="return false">${m.params.map(q=>`<div class="f"><label for="p-${m.id}-${q.k}">${q.l}</label><input type="number" id="p-${m.id}-${q.k}" min="0" step="${q.s||1}"></div>`).join("")}</form></details>
+  </div>`;
+  mbox.appendChild(el);});
+const mleg=document.getElementById("mlegend");
+mleg.innerHTML=MODELS.map(m=>`<span><i style="background:var(${m.c})"></i>${m.id} ${m.name}</span>`).join("");
+
+const $=id=>document.getElementById(id);
+const num=id=>{const v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0;};
+function load(){SHARED.forEach(f=>$("s-"+f.k).value=f.v);MODELS.forEach(m=>m.params.forEach(q=>$(`p-${m.id}-${q.k}`).value=q.v));}
+
+function calc(){
+  const S={};SHARED.forEach(f=>S[f.k]=f.opts?$("s-"+f.k).value:num("s-"+f.k));
+  S.depPax=S.pax*S.dep/100;S.arrPax=S.pax-S.depPax;S.optins=S.pax*S.wifi/100;
+  S.imps=S.depPax*S.dwell*S.opm+S.arrPax*S.arr;
+  const prof=SEASON[S.season];
+  const R=MODELS.map(m=>{
+    const p={};m.params.forEach(q=>p[q.k]=num(`p-${m.id}-${q.k}`));
+    const lines=m.lines(p,S);const gross=Math.max(0,lines.reduce((a,l)=>a+l.v,0));
+    const fixed=lines.filter(l=>l.fixed).reduce((a,l)=>a+l.v,0);const vari=gross-fixed;
+    const months=prof.map(x=>fixed/12+vari*x/12);
+    const airport=Math.max(gross*S.share/100,S.mag),opex=gross*p.opex/100,net=gross-airport-opex;
+    return {m,lines,gross,y1:gross*p.ramp/100,fixed,months,airport,opex,net,margin:gross?net/gross:0,
+      ratio:Math.min(...months)>0?Math.max(...months)/Math.min(...months):0,magBinds:S.mag>gross*S.share/100};
+  });
+
+  // cards
+  R.forEach(r=>{const id=r.m.id;
+    $("g-"+id).textContent=eur(r.gross);
+    $("l-"+id).innerHTML=r.lines.map(l=>`<tr><td>${l.k}${l.fixed?'<span class="tag">fixed</span>':""}<span class="basis">${l.b}</span></td><td class="r num">${eur(l.v)}</td></tr>`).join("");
+    const pa=r.gross?Math.min(100,r.airport/r.gross*100):0,po=r.gross?Math.min(100-pa,r.opex/r.gross*100):0,pn=Math.max(0,100-pa-po);
+    $("sp-"+id).innerHTML=`<span style="width:${pa}%;background:var(--airport)"></span><span style="width:${po}%;background:var(--opex)"></span><span style="width:${pn}%;background:var(${r.m.c})"></span>`;
+    $("sn-"+id).innerHTML=`Airport ${eur(r.airport)}${r.magBinds?' <b style="color:var(--warn)">(guarantee binding)</b>':""} · operator net <span style="color:${r.net<0?"var(--bad)":"inherit"}">${eur(r.net)}</span>`;});
+
+  // scoreboard
+  const cols=[["gross",1],["y1",1],["rpp",1],["airport",1],["net",1],["margin",1],["fixedPct",1],["ratio",-1]];
+  R.forEach(r=>{r.rpp=S.pax?r.gross/S.pax:0;r.fixedPct=r.gross?r.fixed/r.gross:0;});
+  const best={};cols.forEach(([k,dir])=>{best[k]=R.reduce((b,r)=>(dir>0?r[k]>b[k]:r[k]<b[k])?r:b,R[0]).m.id;});
+  const cell=(r,k,txt)=>`<td class="r num${best[k]===r.m.id?" best":""}">${txt}</td>`;
+  $("sb").innerHTML=R.map(r=>`<tr><td><div class="mname"><span class="badge" style="background:var(${r.m.c})">${r.m.id}</span>${r.m.name}</div></td>`+
+    cell(r,"gross",eur(r.gross))+cell(r,"y1",eur(r.y1))+cell(r,"rpp","€"+r.rpp.toFixed(2))+cell(r,"airport",eur(r.airport))+
+    `<td class="r num${best.net===r.m.id?" best":""}" style="${r.net<0?"color:var(--bad)":""}">${eur(r.net)}</td>`+
+    cell(r,"margin",(r.margin*100).toFixed(1)+"%")+cell(r,"fixedPct",(r.fixedPct*100).toFixed(0)+"%")+cell(r,"ratio",r.ratio?r.ratio.toFixed(1)+"×":"–")+`</tr>`).join("");
+  $("sb-note").textContent=`${big(S.imps)} impressions / yr · ▲ marks the leader on each measure`;
+
+  drawSplit(R);drawMonthly(R);
+}
+
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x||1))),f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+
+function drawSplit(R){
+  const W=560,H=230,L=150,Rm=16,T=8,B=24,svg=$("split");
+  const max=Math.max(...R.map(r=>r.gross),1),step=niceStep(max/4),top=Math.ceil(max/step)*step;
+  const x=v=>L+(W-L-Rm)*Math.max(0,v)/top,rowH=(H-T-B)/R.length,bh=rowH*0.58;
+  let s="";
+  for(let v=0;v<=top+1e-9;v+=step)s+=`<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${H-B}"/><text x="${x(v)}" y="${H-6}" text-anchor="middle">${eur(v)}</text>`;
+  R.forEach((r,i)=>{const y=T+i*rowH+(rowH-bh)/2;
+    const a=Math.min(r.airport,r.gross),o=Math.min(r.opex,r.gross-a),n=Math.max(0,r.gross-a-o);
+    s+=`<text class="lbl" x="${L-8}" y="${y+bh/2+4}" text-anchor="end">${r.m.id} · ${r.m.name}</text>`;
+    s+=`<rect x="${x(0)}" y="${y}" width="${x(a)-x(0)}" height="${bh}" fill="var(--airport)"/>`;
+    s+=`<rect x="${x(a)}" y="${y}" width="${x(a+o)-x(a)}" height="${bh}" fill="var(--opex)"/>`;
+    s+=`<rect x="${x(a+o)}" y="${y}" width="${x(a+o+n)-x(a+o)}" height="${bh}" fill="var(${r.m.c})"/>`;
+  });
+  svg.innerHTML=s;
+}
+
+function drawMonthly(R){
+  const W=560,H=230,L=56,Rm=12,T=10,B=24,svg=$("monthly");
+  const max=Math.max(...R.flatMap(r=>r.months),1),step=niceStep(max/4),top=Math.ceil(max/step)*step;
+  const x=i=>L+(W-L-Rm)*i/11,y=v=>T+(H-T-B)*(1-v/top);
+  let s="";
+  for(let v=0;v<=top+1e-9;v+=step)s+=`<line class="grid" x1="${L}" x2="${W-Rm}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${eur(v)}</text>`;
+  MON.forEach((m,i)=>s+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${m}</text>`);
+  R.forEach(r=>{s+=`<polyline fill="none" stroke="var(${r.m.c})" stroke-width="2.2" stroke-linejoin="round" points="${r.months.map((v,i)=>x(i)+","+y(v)).join(" ")}"/>`;
+    const li=r.months.length-1;s+=`<circle cx="${x(li)}" cy="${y(r.months[li])}" r="3" fill="var(${r.m.c})"/>`;});
+  svg.innerHTML=s;
+}
+
+load();calc();
+document.querySelector("main").addEventListener("input",calc);
+$("reset").addEventListener("click",()=>{load();calc();});
+})();
+</script>
